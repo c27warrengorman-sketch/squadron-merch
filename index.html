@@ -922,7 +922,7 @@ function adminUploadImage(idx, input) {
       var canvas = document.createElement('canvas');
       canvas.width = w; canvas.height = h;
       canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-      var dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+      var dataUrl = canvas.toDataURL('image/jpeg', 1.0);
       CONFIG.ITEMS[idx].image = dataUrl;
       saveCustomItems(); adminRenderItems();
       adminShowMsg('adminItemMsg','success','Image uploaded!');
