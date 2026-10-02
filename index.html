@@ -1023,8 +1023,8 @@ function openCropEditor(file, callback) {
       cropState.panX = 0;
       cropState.panY = 0;
       document.getElementById('cropZoom').value = 100;
-      cropUpdateTransform();
       document.getElementById('cropOverlay').style.display = 'flex';
+      requestAnimationFrame(function() { cropUpdateTransform(); });
     };
     img.src = e.target.result;
   };
