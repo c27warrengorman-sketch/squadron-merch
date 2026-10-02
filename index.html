@@ -333,6 +333,39 @@
   .filter-row { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; flex-wrap: wrap; }
   .filter-row select { width: auto; min-width: 120px; font-size: 0.8rem; padding: 0.35rem 0.5rem; }
 
+  /* ── Crop Editor Modal ── */
+  .crop-overlay {
+    position: fixed; inset: 0; z-index: 1000;
+    background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center;
+    padding: 16px;
+  }
+  .crop-modal {
+    background: var(--surface); border-radius: var(--radius);
+    padding: 1rem; max-width: 500px; width: 100%;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+  .crop-modal h3 { margin-top: 0; }
+  .crop-viewport {
+    position: relative; width: 100%; aspect-ratio: 4/3;
+    overflow: hidden; border-radius: 6px; border: 2px solid var(--accent);
+    cursor: grab; touch-action: none; background: var(--surface-alt);
+  }
+  .crop-viewport:active { cursor: grabbing; }
+  .crop-viewport img {
+    position: absolute; top: 0; left: 0;
+    transform-origin: 0 0; pointer-events: none; user-select: none;
+    -webkit-user-drag: none;
+  }
+  .crop-controls {
+    display: flex; align-items: center; gap: 0.5rem; margin: 0.75rem 0;
+  }
+  .crop-controls label { margin: 0; flex-shrink: 0; }
+  .crop-controls input[type="range"] {
+    flex: 1; -webkit-appearance: auto; appearance: auto;
+    padding: 0; border: none; background: none;
+  }
+  .crop-actions { display: flex; gap: 0.5rem; justify-content: flex-end; }
+
   @media (max-width: 500px) {
     .contact-grid { grid-template-columns: 1fr; }
     .variant-row .vr-qty { width: 60px; }
@@ -490,6 +523,24 @@
   </div>
 
   <div class="footer">Questions? Contact your squadron rep.</div>
+</div>
+
+<div class="crop-overlay" id="cropOverlay" style="display:none">
+  <div class="crop-modal">
+    <h3>Adjust Image</h3>
+    <p style="font-size:0.8rem;color:var(--fg-muted);margin:0 0 0.75rem">Drag to reposition. Use the slider to zoom.</p>
+    <div class="crop-viewport" id="cropViewport">
+      <img id="cropImg" src="">
+    </div>
+    <div class="crop-controls">
+      <label>Zoom</label>
+      <input type="range" id="cropZoom" min="100" max="300" value="100">
+    </div>
+    <div class="crop-actions">
+      <button class="btn btn-outline" onclick="cropCancel()">Cancel</button>
+      <button class="btn btn-primary" onclick="cropSave()">Save</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -953,39 +1004,116 @@ function adminAddChip(idx, field) {
   adminShowMsg('adminItemMsg','success','"'+val+'" added.');
 }
 
-function processImageFile(file, callback) {
-  if (file.size > 5 * 1024 * 1024) {
-    adminShowMsg('adminItemMsg','error','Image too large (max 5 MB).');
+// ── Crop Editor ──
+var cropState = { callback: null, imgEl: null, natW: 0, natH: 0, zoom: 1, panX: 0, panY: 0, dragging: false, lastX: 0, lastY: 0 };
+
+function openCropEditor(file, callback) {
+  if (file.size > 10 * 1024 * 1024) {
+    adminShowMsg('adminItemMsg','error','Image too large (max 10 MB).');
     return;
   }
+  cropState.callback = callback;
   var reader = new FileReader();
   reader.onload = function(e) {
-    var img = new Image();
+    var img = document.getElementById('cropImg');
     img.onload = function() {
-      var max = 1200;
-      var w = img.width, h = img.height;
-      if (w > max || h > max) {
-        if (w > h) { h = Math.round(h * max / w); w = max; }
-        else { w = Math.round(w * max / h); h = max; }
-      }
-      var canvas = document.createElement('canvas');
-      canvas.width = w; canvas.height = h;
-      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-      callback(canvas.toDataURL('image/jpeg', 1.0));
+      cropState.natW = img.naturalWidth;
+      cropState.natH = img.naturalHeight;
+      cropState.zoom = 1;
+      cropState.panX = 0;
+      cropState.panY = 0;
+      document.getElementById('cropZoom').value = 100;
+      cropUpdateTransform();
+      document.getElementById('cropOverlay').style.display = 'flex';
     };
     img.src = e.target.result;
   };
   reader.readAsDataURL(file);
 }
 
+function cropUpdateTransform() {
+  var vp = document.getElementById('cropViewport');
+  var img = document.getElementById('cropImg');
+  var vpW = vp.offsetWidth, vpH = vp.offsetHeight;
+  var scale = cropState.zoom;
+  var fitScale = Math.max(vpW / cropState.natW, vpH / cropState.natH);
+  var dispW = cropState.natW * fitScale * scale;
+  var dispH = cropState.natH * fitScale * scale;
+  var maxPanX = Math.max(0, (dispW - vpW) / 2);
+  var maxPanY = Math.max(0, (dispH - vpH) / 2);
+  cropState.panX = Math.max(-maxPanX, Math.min(maxPanX, cropState.panX));
+  cropState.panY = Math.max(-maxPanY, Math.min(maxPanY, cropState.panY));
+  var left = (vpW - dispW) / 2 + cropState.panX;
+  var top = (vpH - dispH) / 2 + cropState.panY;
+  img.style.width = dispW + 'px';
+  img.style.height = dispH + 'px';
+  img.style.left = left + 'px';
+  img.style.top = top + 'px';
+}
+
+document.getElementById('cropZoom').addEventListener('input', function() {
+  cropState.zoom = this.value / 100;
+  cropUpdateTransform();
+});
+
+(function() {
+  var vp = document.getElementById('cropViewport');
+  function startDrag(x, y) { cropState.dragging = true; cropState.lastX = x; cropState.lastY = y; }
+  function moveDrag(x, y) {
+    if (!cropState.dragging) return;
+    cropState.panX += x - cropState.lastX;
+    cropState.panY += y - cropState.lastY;
+    cropState.lastX = x; cropState.lastY = y;
+    cropUpdateTransform();
+  }
+  function endDrag() { cropState.dragging = false; }
+  vp.addEventListener('mousedown', function(e) { e.preventDefault(); startDrag(e.clientX, e.clientY); });
+  window.addEventListener('mousemove', function(e) { moveDrag(e.clientX, e.clientY); });
+  window.addEventListener('mouseup', endDrag);
+  vp.addEventListener('touchstart', function(e) { e.preventDefault(); var t = e.touches[0]; startDrag(t.clientX, t.clientY); }, {passive:false});
+  window.addEventListener('touchmove', function(e) { if(cropState.dragging){var t=e.touches[0];moveDrag(t.clientX,t.clientY);} });
+  window.addEventListener('touchend', endDrag);
+})();
+
+function cropSave() {
+  var vp = document.getElementById('cropViewport');
+  var img = document.getElementById('cropImg');
+  var vpW = vp.offsetWidth, vpH = vp.offsetHeight;
+  var fitScale = Math.max(vpW / cropState.natW, vpH / cropState.natH);
+  var totalScale = fitScale * cropState.zoom;
+  var dispW = cropState.natW * totalScale;
+  var dispH = cropState.natH * totalScale;
+  var left = (vpW - dispW) / 2 + cropState.panX;
+  var top = (vpH - dispH) / 2 + cropState.panY;
+  var srcX = -left / totalScale;
+  var srcY = -top / totalScale;
+  var srcW = vpW / totalScale;
+  var srcH = vpH / totalScale;
+
+  var outW = 1200, outH = 900;
+  var canvas = document.createElement('canvas');
+  canvas.width = outW; canvas.height = outH;
+  canvas.getContext('2d').drawImage(img, srcX, srcY, srcW, srcH, 0, 0, outW, outH);
+  var dataUrl = canvas.toDataURL('image/jpeg', 1.0);
+
+  document.getElementById('cropOverlay').style.display = 'none';
+  if (cropState.callback) cropState.callback(dataUrl);
+}
+
+function cropCancel() {
+  document.getElementById('cropOverlay').style.display = 'none';
+  cropState.callback = null;
+}
+
 function adminUploadImage(idx, input) {
   var file = input.files && input.files[0];
   if (!file) return;
-  processImageFile(file, function(dataUrl) {
+  openCropEditor(file, function(dataUrl) {
     CONFIG.ITEMS[idx].image = dataUrl;
     saveCustomItems(); adminRenderItems();
-    adminShowMsg('adminItemMsg','success','Image uploaded!');
+    adminShowMsg('adminItemMsg','success','Image saved!');
   });
+  input.value = '';
 }
 
 function adminRemoveImage(idx) {
@@ -997,12 +1125,13 @@ function adminRemoveImage(idx) {
 function adminUploadColorImage(idx, color, input) {
   var file = input.files && input.files[0];
   if (!file) return;
-  processImageFile(file, function(dataUrl) {
+  openCropEditor(file, function(dataUrl) {
     if (!CONFIG.ITEMS[idx].images) CONFIG.ITEMS[idx].images = {};
     CONFIG.ITEMS[idx].images[color] = dataUrl;
     saveCustomItems(); adminRenderItems();
-    adminShowMsg('adminItemMsg','success',color+' image uploaded!');
+    adminShowMsg('adminItemMsg','success',color+' image saved!');
   });
+  input.value = '';
 }
 
 function adminRemoveColorImage(idx, color) {
