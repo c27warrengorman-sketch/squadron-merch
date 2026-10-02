@@ -173,14 +173,14 @@
     background: var(--surface); border: 1px solid var(--border);
     border-radius: var(--radius); padding: 1rem; margin-bottom: 0.75rem;
   }
+  .item-img {
+    width: 100%; aspect-ratio: 4/3; object-fit: cover;
+    border-radius: 6px; border: 1px solid var(--border); margin-bottom: 0.75rem;
+  }
   .item-header {
     display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;
   }
   .item-header-left { display: flex; align-items: center; gap: 0.75rem; min-width: 0; }
-  .item-thumb {
-    width: 52px; height: 52px; border-radius: 6px; object-fit: cover;
-    border: 1px solid var(--border); flex-shrink: 0;
-  }
   .item-name { font-family: var(--font-display); font-weight: 700; font-size: 1rem; margin: 0; }
   .item-price {
     font-family: var(--font-display); font-weight: 700; font-size: 0.95rem;
@@ -248,7 +248,7 @@
 
   .admin-img-section { display: flex; gap: 0.75rem; align-items: start; margin-bottom: 0.6rem; }
   .admin-img-preview {
-    width: 64px; height: 64px; border-radius: 6px; object-fit: cover;
+    width: 100px; height: 75px; border-radius: 6px; object-fit: cover;
     border: 1px solid var(--border); flex-shrink: 0; background: var(--surface-alt);
   }
   .admin-img-controls { flex: 1; min-width: 0; }
@@ -538,12 +538,13 @@ function buildItems() {
     var hasColors = item.colors && item.colors.length > 0;
     var imgHtml = '';
     if (item.image) {
-      imgHtml = '<img class="item-thumb" src="'+escAttr(item.image)+'" alt="">';
+      imgHtml = '<img class="item-img" src="'+escAttr(item.image)+'" alt="'+escAttr(item.name)+'">';
     }
 
     return '<div class="card" data-item-id="'+item.id+'">' +
+      imgHtml +
       '<div class="item-header">' +
-        '<div class="item-header-left">' + imgHtml +
+        '<div class="item-header-left">' +
           '<p class="item-name">'+escHtml(item.name)+'</p>' +
         '</div>' +
         '<span class="item-price">$'+item.price.toFixed(2)+'</span>' +
@@ -797,32 +798,31 @@ function renderBulkSummary() {
   }
 
   var agg = {};
-  var grandQty = 0, grandTotal = 0;
+  var grandQty = 0;
   orders.forEach(function(o) {
     (o.items||[]).forEach(function(i) {
-      if (!agg[i.name]) agg[i.name] = { price: i.price, variants: {} };
+      if (!agg[i.name]) agg[i.name] = { variants: {} };
       var vk = i.size + (i.color ? ' / '+i.color : '');
       if (!agg[i.name].variants[vk]) agg[i.name].variants[vk] = { size: i.size, color: i.color||'', qty: 0 };
       agg[i.name].variants[vk].qty += i.qty;
       grandQty += i.qty;
-      grandTotal += i.subtotal;
     });
   });
 
-  var html = '<table class="bulk-table"><thead><tr><th>Item / Variant</th><th>Qty</th><th>Subtotal</th></tr></thead><tbody>';
+  var html = '<table class="bulk-table"><thead><tr><th>Item / Variant</th><th>Qty</th></tr></thead><tbody>';
   Object.keys(agg).forEach(function(name) {
     var prod = agg[name];
     var prodQty = 0;
     Object.values(prod.variants).forEach(function(v){ prodQty += v.qty; });
-    html += '<tr class="row-product"><td colspan="3">'+escHtml(name)+' — '+prodQty+' total</td></tr>';
+    html += '<tr class="row-product"><td colspan="2">'+escHtml(name)+' — '+prodQty+' total</td></tr>';
 
     var sorted = Object.keys(prod.variants).sort();
     sorted.forEach(function(vk) {
       var v = prod.variants[vk];
-      html += '<tr><td style="padding-left:1.2rem">'+escHtml(vk)+'</td><td>'+v.qty+'</td><td>$'+(v.qty*prod.price).toFixed(2)+'</td></tr>';
+      html += '<tr><td style="padding-left:1.2rem">'+escHtml(vk)+'</td><td>'+v.qty+'</td></tr>';
     });
   });
-  html += '<tr class="bulk-total-row"><td>Grand Total</td><td>'+grandQty+'</td><td>$'+grandTotal.toFixed(2)+'</td></tr>';
+  html += '<tr class="bulk-total-row"><td>Grand Total</td><td>'+grandQty+'</td></tr>';
   html += '</tbody></table>';
 
   document.getElementById('bulkSummary').innerHTML = '<div class="card">'+html+'</div>';
@@ -913,7 +913,7 @@ function adminUploadImage(idx, input) {
   reader.onload = function(e) {
     var img = new Image();
     img.onload = function() {
-      var max = 300;
+      var max = 600;
       var w = img.width, h = img.height;
       if (w > max || h > max) {
         if (w > h) { h = Math.round(h * max / w); w = max; }
