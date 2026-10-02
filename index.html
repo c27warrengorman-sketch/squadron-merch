@@ -913,7 +913,7 @@ function adminUploadImage(idx, input) {
   reader.onload = function(e) {
     var img = new Image();
     img.onload = function() {
-      var max = 600;
+      var max = 1200;
       var w = img.width, h = img.height;
       if (w > max || h > max) {
         if (w > h) { h = Math.round(h * max / w); w = max; }
