@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Squadron Merch Order</title>
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <style>
+    :root {
+      --bg: #f5f6f8;
+      --surface: #ffffff;
+      --surface-alt: #eceef2;
+      --fg: #1a1d23;
+      --fg-muted: #6b7280;
+      --accent: #1e3a6e;
+      --accent-light: #e8edf5;
+      --accent-hover: #15294f;
+      --border: #d4d8e0;
+      --success: #15803d;
+      --success-bg: #dcfce7;
+      --error: #b91c1c;
+      --error-bg: #fee2e2;
+      --radius: 8px;
+      --font-display: 'Space Grotesk', system-ui, sans-serif;
+      --font-body: 'Inter', system-ui, sans-serif;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0f1117;
+        --surface: #1a1d26;
+        --surface-alt: #23272f;
+        --fg: #e2e4ea;
+        --fg-muted: #8b919d;
+        --accent: #5b8fd9;
+        --accent-light: #1a2740;
+        --accent-hover: #7aa5e5;
+        --border: #2e333d;
+        --success: #4ade80;
+        --success-bg: #14261e;
+        --error: #ef4444;
+        --error-bg: #2b1616;
+        color-scheme: dark;
+      }
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: var(--font-body);
+      min-height: 100vh;
+    }
+
+    .wrap {
+      max-width: 620px;
+      margin: 0 auto;
+      padding: 0 16px;
+    }
+
+    /* ── Header ── */
+    .header {
+      text-align: center;
+      padding: 2.5rem 0 0.5rem;
+    }
+
+    .header h1 {
+      font-family: var(--font-display);
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin: 0 0 0.25rem;
+      letter-spacing: -0.02em;
+      text-wrap: balance;
+    }
+
+    .header p {
+      color: var(--fg-muted);
+      font-size: 0.875rem;
+      margin: 0;
+    }
+
+    .banner {
+      background: var(--accent);
+      color: #fff;
+      text-align: center;
+      padding: 0.6rem 1rem;
+      border-radius: var(--radius);
+      font-weight: 600;
+      font-size: 0.8rem;
+      letter-spacing: 0.02em;
+      margin: 1rem 0 1.25rem;
+    }
+
+    /* ── Shared ── */
+    h2 {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 1.1rem;
+      margin: 1.5rem 0 0.75rem;
+    }
+
+    h2:first-child {
+      margin-top: 0;
+    }
+
+    label {
+      display: block;
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--fg-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 0.25rem;
+    }
+
+    select,
+    input {
+      width: 100%;
+      padding: 0.5rem 0.6rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--surface);
+      color: var(--fg);
+      font-family: var(--font-body);
+      font-size: 0.875rem;
+      transition: border-color 0.15s;
+      -webkit-appearance: none;
+    }
+
+    select {
+      cursor: pointer;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%236b7280'%3E%3Cpath d='M2 4l4 4 4-4'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      padding-right: 28px;
+    }
+
+    select:focus,
+    input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      padding: 0.55rem 1rem;
+      border: none;
+      border-radius: 6px;
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: background 0.15s, opacity 0.15s;
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-hover);
+    }
+
+    .btn-ghost {
+      background: none;
+      color: var(--accent);
+      padding: 0.4rem 0.5rem;
+      font-size: 0.8rem;
+    }
+
+    .btn-ghost:hover {
+      background: var(--accent-light);
+    }
+
+    .btn-full {
+      width: 100%;
+    }
+
+    .btn-danger {
+      background: none;
+      color: var(--error);
+      padding: 0.3rem;
+      font-size: 0.75rem;
+      border: none;
+      cursor: pointer;
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* ── Item Cards ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 0.6rem;
+    }
+
+    .item-name {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 1rem;
+      margin: 0;
+    }
+
+    .item-price {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: var(--accent);
+      white-space: nowrap;
+    }
+
+    .size-row {
+      display: flex;
+      gap: 0.5rem;
+      align-items: end;
+      margin-bottom: 0.5rem;
+    }
+
+    .size-row .size-field {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .size-row .qty-field {
+      width: 80px;
+      flex-shrink: 0;
+    }
+
+    .size-row .remove-field {
+      width: 32px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding-bottom: 4px;
+    }
+
+    /* ── Order Summary ── */
+    .summary-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.75rem 1rem;
+      margin: 1rem 0;
+      font-size: 0.85rem;
+    }
+
+    .summary-line {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.2rem 0;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .summary-total {
+      border-top: 1px solid var(--border);
+      margin-top: 0.3rem;
+      padding-top: 0.4rem;
+      font-weight: 700;
+      font-size: 0.95rem;
+    }
+
+    /* ── Contact ── */
+    .contact-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.6rem;
+      margin-bottom: 1rem;
+    }
+
+    .contact-grid .full {
+      grid-column: 1 / -1;
+    }
+
+    /* ── Messages ── */
+    .msg {
+      padding: 0.75rem 1rem;
+      border-radius: var(--radius);
+      margin-bottom: 0.75rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-align: center;
+    }
+
+    .msg-success {
+      background: var(--success-bg);
+      color: var(--success);
+    }
+
+    .msg-error {
+      background: var(--error-bg);
+      color: var(--error);
+    }
+
+    /* ── Success / Venmo ── */
+    .success-view {
+      text-align: center;
+    }
+
+    .venmo-box {
+      background: var(--accent-light);
+      border: 2px solid var(--accent);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      margin: 1rem 0;
+      text-align: center;
+    }
+
+    .venmo-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--fg-muted);
+      margin-bottom: 0.35rem;
+    }
+
+    .venmo-handle {
+      font-family: var(--font-display);
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--accent);
+      word-break: break-all;
+    }
+
+    .venmo-amount {
+      margin-top: 0.35rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--fg);
+    }
+
+    .footer {
+      text-align: center;
+      padding: 2rem 0;
+      color: var(--fg-muted);
+      font-size: 0.7rem;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    @media (max-width: 500px) {
+      .contact-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .size-row .qty-field {
+        width: 70px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="header">
+      <h1>Squadron Merch</h1>
+      <p>Bulk order — all proceeds support the squadron</p>
+    </div>
+
+    <div class="banner">Orders close October 18, 2026</div>
+
+    <!-- ═══ ORDER FORM ═══ -->
+    <div id="formView">
+      <h2>Select Your Items</h2>
+      <div id="itemList"></div>
+
+      <div id="summaryBox" class="summary-box" style="display:none"></div>
+
+      <div id="errorMsg" class="msg msg-error" style="display:none"></div>
+
+      <h2>Your Info</h2>
+      <div class="contact-grid">
+        <div class="full">
+          <label for="custName">Full Name</label>
+          <input type="text" id="custName" required placeholder="First Last">
+        </div>
+        <div>
+          <label for="custEmail">Email</label>
+          <input type="email" id="custEmail" required placeholder="you@example.com">
+        </div>
+        <div>
+          <label for="custPhone">Phone</label>
+          <input type="tel" id="custPhone" placeholder="(555) 555-5555">
+        </div>
+        <div class="full">
+          <label for="custAffiliation">Affiliation</label>
+          <select id="custAffiliation">
+            <option value="">Select one</option>
+            <option>Cadet</option>
+            <option>Parent</option>
+            <option>Alumni</option>
+            <option>Staff / Faculty</option>
+            <option>Other</option>
+          </select>
+        </div>
+      </div>
+
+      <button class="btn btn-primary btn-full" id="submitBtn" onclick="submitOrder()">Submit Order</button>
+    </div>
+
+    <!-- ═══ SUCCESS ═══ -->
+    <div id="successView" class="success-view" style="display:none">
+      <div class="msg msg-success">Order submitted! Here's your summary.</div>
+      <div id="receiptBox" class="summary-box"></div>
+      <div class="venmo-box">
+        <div class="venmo-label">Send payment via Venmo to</div>
+        <div class="venmo-handle" id="venmoHandle"></div>
+        <div class="venmo-amount" id="venmoAmount"></div>
+      </div>
+      <p style="font-size:0.8rem;color:var(--fg-muted);margin:0.5rem 0 1rem">
+        Please include your <strong>name</strong> in the Venmo note so we can match your payment.
+      </p>
+      <button class="btn btn-primary btn-full" onclick="resetForm()">Place Another Order</button>
+
+      <!-- Admin: edit Venmo handle (only visible when ?admin is in the URL) -->
+      <div id="adminPanel" style="display:none;margin-top:2rem">
+        <div class="card">
+          <h2 style="margin-top:0">Admin Settings</h2>
+          <div style="margin-bottom:0.6rem">
+            <label for="venmoInput">Venmo Handle</label>
+            <input type="text" id="venmoInput" placeholder="@YourHandle">
+          </div>
+          <button class="btn btn-primary" onclick="saveVenmo()">Save Venmo Handle</button>
+          <p id="adminMsg" style="font-size:0.8rem;color:var(--success);margin:0.5rem 0 0;display:none">Saved!</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">Questions? Contact your squadron rep.</div>
+  </div>
+
+  <script>
+    // ╔══════════════════════════════════════════════════════════════╗
+    // ║  CONFIGURATION — edit these values                          ║
+    // ╚══════════════════════════════════════════════════════════════╝
+    const CONFIG = {
+      // After deploying your Google Apps Script, paste the web app URL here:
+      SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbznyGV3rh_IhPDeC9Z81zGF1pqPEx23Wt6FIC_8WYP9f5BO6bFtb-xxp_TXd1D6y5QA/exec',
+
+      // Default Venmo handle (editable via ?admin page — saved in browser):
+      VENMO: '@YourSquadronVenmo',
+
+      // Merch items — add, remove, or edit as needed:
+      ITEMS: [
+        {
+          id: 'tshirt',
+          name: 'Squadron T-Shirt',
+          price: 25,
+          sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL']
+        },
+        {
+          id: 'hoodie',
+          name: 'Squadron Hoodie',
+          price: 45,
+          sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL']
+        }
+      ]
+    };
+
+    // ╔══════════════════════════════════════════════════════════════╗
+    // ║  APP CODE — no need to edit below                           ║
+    // ╚══════════════════════════════════════════════════════════════╝
+
+    function buildItems() {
+      const container = document.getElementById('itemList');
+      container.innerHTML = CONFIG.ITEMS.map(item => {
+        const sizeOpts = item.sizes.map(s => `<option value="${s}">${s}</option>`).join('');
+        return `<div class="card" data-item-id="${item.id}">
+      <div class="item-header">
+        <p class="item-name">${item.name}</p>
+        <span class="item-price">$${item.price.toFixed(2)}</span>
+      </div>
+      <div class="size-rows" data-item="${item.id}">
+        <div class="size-row">
+          <div class="size-field">
+            <label>Size</label>
+            <select class="sel-size" onchange="updateSummary()">
+              <option value="">— None —</option>
+              ${sizeOpts}
+            </select>
+          </div>
+          <div class="qty-field">
+            <label>Qty</label>
+            <select class="sel-qty" onchange="updateSummary()">
+              ${[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => `<option value="${n}">${n}</option>`).join('')}
+            </select>
+          </div>
+          <div class="remove-field"></div>
+        </div>
+      </div>
+      <button class="btn btn-ghost" onclick="addSizeRow('${item.id}')">+ Add another size</button>
+    </div>`;
+      }).join('');
+    }
+
+    function addSizeRow(itemId) {
+      const item = CONFIG.ITEMS.find(i => i.id === itemId);
+      if (!item) return;
+      const container = document.querySelector(`.size-rows[data-item="${itemId}"]`);
+      const sizeOpts = item.sizes.map(s => `<option value="${s}">${s}</option>`).join('');
+      const row = document.createElement('div');
+      row.className = 'size-row';
+      row.innerHTML = `
+    <div class="size-field">
+      <label>Size</label>
+      <select class="sel-size" onchange="updateSummary()">
+        <option value="">— None —</option>
+        ${sizeOpts}
+      </select>
+    </div>
+    <div class="qty-field">
+      <label>Qty</label>
+      <select class="sel-qty" onchange="updateSummary()">
+        ${[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => `<option value="${n}">${n}</option>`).join('')}
+      </select>
+    </div>
+    <div class="remove-field">
+      <button class="btn-danger" onclick="removeRow(this)" title="Remove">✕</button>
+    </div>`;
+      container.appendChild(row);
+    }
+
+    function removeRow(btn) {
+      btn.closest('.size-row').remove();
+      updateSummary();
+    }
+
+    function getOrderItems() {
+      const orderItems = [];
+      CONFIG.ITEMS.forEach(item => {
+        const rows = document.querySelectorAll(`.size-rows[data-item="${item.id}"] .size-row`);
+        rows.forEach(row => {
+          const size = row.querySelector('.sel-size').value;
+          const qty = parseInt(row.querySelector('.sel-qty').value) || 0;
+          if (size && qty > 0) {
+            orderItems.push({ itemId: item.id, name: item.name, size, qty, price: item.price, subtotal: qty * item.price });
+          }
+        });
+      });
+      return orderItems;
+    }
+
+    function updateSummary() {
+      const items = getOrderItems();
+      const box = document.getElementById('summaryBox');
+      if (items.length === 0) { box.style.display = 'none'; return; }
+
+      let total = 0;
+      const lines = items.map(i => {
+        total += i.subtotal;
+        return `<div class="summary-line"><span>${i.name} (${i.size}) × ${i.qty}</span><span>$${i.subtotal.toFixed(2)}</span></div>`;
+      }).join('');
+
+      box.innerHTML = lines + `<div class="summary-line summary-total"><span>Total</span><span>$${total.toFixed(2)}</span></div>`;
+      box.style.display = 'block';
+    }
+
+    function showError(msg) {
+      const el = document.getElementById('errorMsg');
+      el.textContent = msg;
+      el.style.display = 'block';
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function hideError() {
+      document.getElementById('errorMsg').style.display = 'none';
+    }
+
+    async function submitOrder() {
+      hideError();
+      const items = getOrderItems();
+      if (items.length === 0) { showError('Please select at least one item with a size.'); return; }
+
+      // Check for duplicate sizes on same item
+      const seen = new Set();
+      for (const i of items) {
+        const key = i.itemId + '|' + i.size;
+        if (seen.has(key)) { showError(`You selected ${i.size} for ${i.name} more than once. Use one row and increase the quantity instead.`); return; }
+        seen.add(key);
+      }
+
+      const name = document.getElementById('custName').value.trim();
+      const email = document.getElementById('custEmail').value.trim();
+      const phone = document.getElementById('custPhone').value.trim();
+      const affiliation = document.getElementById('custAffiliation').value;
+
+      if (!name) { showError('Please enter your name.'); return; }
+      if (!email) { showError('Please enter your email.'); return; }
+
+      const total = items.reduce((s, i) => s + i.subtotal, 0);
+
+      const orderDetails = items.map(i => `${i.name} (${i.size}) ×${i.qty}`).join(', ');
+
+      const payload = { name, email, phone, affiliation, orderDetails, total, items };
+
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Submitting...';
+
+      try {
+        if (CONFIG.SCRIPT_URL && CONFIG.SCRIPT_URL !== 'YOUR_APPS_SCRIPT_URL_HERE') {
+          await fetch(CONFIG.SCRIPT_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+        }
+
+        // Show success
+        const receipt = items.map(i =>
+          `<div class="summary-line"><span>${i.name} (${i.size}) × ${i.qty}</span><span>$${i.subtotal.toFixed(2)}</span></div>`
+        ).join('');
+
+        document.getElementById('receiptBox').innerHTML = receipt +
+          `<div class="summary-line summary-total"><span>Total</span><span>$${total.toFixed(2)}</span></div>`;
+
+        document.getElementById('venmoHandle').textContent = CONFIG.VENMO;
+        document.getElementById('venmoAmount').textContent = `Amount: $${total.toFixed(2)}`;
+
+        document.getElementById('formView').style.display = 'none';
+        document.getElementById('successView').style.display = 'block';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+      } catch (err) {
+        showError('Something went wrong. Please try again.');
+        console.error(err);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = 'Submit Order';
+      }
+    }
+
+    function resetForm() {
+      document.getElementById('formView').style.display = 'block';
+      document.getElementById('successView').style.display = 'none';
+      buildItems();
+      updateSummary();
+      document.getElementById('custName').value = '';
+      document.getElementById('custEmail').value = '';
+      document.getElementById('custPhone').value = '';
+      document.getElementById('custAffiliation').value = '';
+      hideError();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // ── Venmo handle: editable via ?admin ──
+    function getVenmo() {
+      try { return localStorage.getItem('sq_venmo') || CONFIG.VENMO; } catch (e) { return CONFIG.VENMO; }
+    }
+
+    function saveVenmo() {
+      const val = document.getElementById('venmoInput').value.trim();
+      if (!val) return;
+      try { localStorage.setItem('sq_venmo', val); } catch (e) { }
+      CONFIG.VENMO = val;
+      const msg = document.getElementById('adminMsg');
+      msg.textContent = 'Saved! Customers will now see: ' + val;
+      msg.style.display = 'block';
+      setTimeout(() => msg.style.display = 'none', 3000);
+    }
+
+    function initAdmin() {
+      if (!location.search.includes('admin')) return;
+      document.getElementById('adminPanel').style.display = 'block';
+      document.getElementById('venmoInput').value = getVenmo();
+    }
+
+    // Init
+    CONFIG.VENMO = getVenmo();
+    buildItems();
+    initAdmin();
+  </script>
+</body>
+
+</html>
