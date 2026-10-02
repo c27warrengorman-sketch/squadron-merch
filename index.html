@@ -534,7 +534,7 @@
     </div>
     <div class="crop-controls">
       <label>Zoom</label>
-      <input type="range" id="cropZoom" min="100" max="300" value="100">
+      <input type="range" id="cropZoom" min="100" max="400" value="100" step="1">
     </div>
     <div class="crop-actions">
       <button class="btn btn-outline" onclick="cropCancel()">Cancel</button>
@@ -1031,20 +1031,26 @@ function openCropEditor(file, callback) {
   reader.readAsDataURL(file);
 }
 
-function cropUpdateTransform() {
+function cropGetScales() {
   var vp = document.getElementById('cropViewport');
-  var img = document.getElementById('cropImg');
   var vpW = vp.offsetWidth, vpH = vp.offsetHeight;
-  var scale = cropState.zoom;
-  var fitScale = Math.max(vpW / cropState.natW, vpH / cropState.natH);
-  var dispW = cropState.natW * fitScale * scale;
-  var dispH = cropState.natH * fitScale * scale;
-  var maxPanX = Math.max(0, (dispW - vpW) / 2);
-  var maxPanY = Math.max(0, (dispH - vpH) / 2);
+  var containScale = Math.min(vpW / cropState.natW, vpH / cropState.natH);
+  var coverScale = Math.max(vpW / cropState.natW, vpH / cropState.natH);
+  return { vpW: vpW, vpH: vpH, containScale: containScale, coverScale: coverScale };
+}
+
+function cropUpdateTransform() {
+  var s = cropGetScales();
+  var img = document.getElementById('cropImg');
+  var totalScale = s.containScale * cropState.zoom;
+  var dispW = cropState.natW * totalScale;
+  var dispH = cropState.natH * totalScale;
+  var maxPanX = Math.max(0, (dispW - s.vpW) / 2);
+  var maxPanY = Math.max(0, (dispH - s.vpH) / 2);
   cropState.panX = Math.max(-maxPanX, Math.min(maxPanX, cropState.panX));
   cropState.panY = Math.max(-maxPanY, Math.min(maxPanY, cropState.panY));
-  var left = (vpW - dispW) / 2 + cropState.panX;
-  var top = (vpH - dispH) / 2 + cropState.panY;
+  var left = (s.vpW - dispW) / 2 + cropState.panX;
+  var top = (s.vpH - dispH) / 2 + cropState.panY;
   img.style.width = dispW + 'px';
   img.style.height = dispH + 'px';
   img.style.left = left + 'px';
@@ -1076,24 +1082,25 @@ document.getElementById('cropZoom').addEventListener('input', function() {
 })();
 
 function cropSave() {
-  var vp = document.getElementById('cropViewport');
+  var s = cropGetScales();
   var img = document.getElementById('cropImg');
-  var vpW = vp.offsetWidth, vpH = vp.offsetHeight;
-  var fitScale = Math.max(vpW / cropState.natW, vpH / cropState.natH);
-  var totalScale = fitScale * cropState.zoom;
+  var totalScale = s.containScale * cropState.zoom;
   var dispW = cropState.natW * totalScale;
   var dispH = cropState.natH * totalScale;
-  var left = (vpW - dispW) / 2 + cropState.panX;
-  var top = (vpH - dispH) / 2 + cropState.panY;
+  var left = (s.vpW - dispW) / 2 + cropState.panX;
+  var top = (s.vpH - dispH) / 2 + cropState.panY;
   var srcX = -left / totalScale;
   var srcY = -top / totalScale;
-  var srcW = vpW / totalScale;
-  var srcH = vpH / totalScale;
+  var srcW = s.vpW / totalScale;
+  var srcH = s.vpH / totalScale;
 
   var outW = 1200, outH = 900;
   var canvas = document.createElement('canvas');
   canvas.width = outW; canvas.height = outH;
-  canvas.getContext('2d').drawImage(img, srcX, srcY, srcW, srcH, 0, 0, outW, outH);
+  var ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, outW, outH);
+  ctx.drawImage(img, srcX, srcY, srcW, srcH, 0, 0, outW, outH);
   var dataUrl = canvas.toDataURL('image/jpeg', 1.0);
 
   document.getElementById('cropOverlay').style.display = 'none';
