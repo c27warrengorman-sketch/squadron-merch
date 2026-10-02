@@ -12,7 +12,8 @@ function doPost(e) {
     var itemBreakdown = '';
     if (data.items && data.items.length > 0) {
       itemBreakdown = data.items.map(function(i) {
-        return i.name + ' (' + i.size + ') x' + i.qty + ' = $' + (i.subtotal).toFixed(2);
+        var variant = i.size + (i.color ? ', ' + i.color : '');
+        return i.name + ' (' + variant + ') x' + i.qty + ' = $' + (i.subtotal).toFixed(2);
       }).join(' | ');
     } else {
       itemBreakdown = data.orderDetails || '';
