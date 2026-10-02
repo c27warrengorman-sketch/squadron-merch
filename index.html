@@ -498,8 +498,8 @@ var CONFIG = {
   VENMO: '@YourSquadronVenmo',
   LOGO: '',
   ITEMS: [
-    { id: 'tshirt', name: 'Squadron T-Shirt', price: 25, sizes: ['S','M','L','XL','2XL','3XL'], colors: ['Black','Navy','Grey'], image: '' },
-    { id: 'hoodie', name: 'Squadron Hoodie', price: 45, sizes: ['S','M','L','XL','2XL','3XL'], colors: ['Black','Navy'], image: '' }
+    { id: 'tshirt', name: 'Squadron T-Shirt', price: 25, sizes: ['S','M','L','XL','2XL','3XL'], colors: ['Black','Navy','Grey'], image: '', images: {} },
+    { id: 'hoodie', name: 'Squadron Hoodie', price: 45, sizes: ['S','M','L','XL','2XL','3XL'], colors: ['Black','Navy'], image: '', images: {} }
   ]
 };
 var DEFAULT_ITEMS = JSON.parse(JSON.stringify(CONFIG.ITEMS));
@@ -515,6 +515,7 @@ function loadCustomItems() {
   CONFIG.ITEMS.forEach(function(it) {
     if (!it.colors) it.colors = [];
     if (!it.image) it.image = '';
+    if (!it.images) it.images = {};
   });
 }
 function saveCustomItems() {
@@ -536,10 +537,18 @@ function buildItems() {
       colorOpts = item.colors.map(function(c) { return '<option value="'+escAttr(c)+'">'+escHtml(c)+'</option>'; }).join('');
     }
     var hasColors = item.colors && item.colors.length > 0;
-    var imgHtml = '';
-    if (item.image) {
-      imgHtml = '<img class="item-img" src="'+escAttr(item.image)+'" alt="'+escAttr(item.name)+'">';
+    var imgs = item.images || {};
+    var defaultSrc = item.image || '';
+    var firstColorSrc = '';
+    if (hasColors) {
+      for (var ci = 0; ci < item.colors.length; ci++) {
+        if (imgs[item.colors[ci]]) { firstColorSrc = imgs[item.colors[ci]]; break; }
+      }
     }
+    var displaySrc = defaultSrc || firstColorSrc;
+    var imgHtml = displaySrc
+      ? '<img class="item-img" id="itemImg_'+item.id+'" src="'+escAttr(displaySrc)+'" alt="'+escAttr(item.name)+'">'
+      : (Object.keys(imgs).length ? '<img class="item-img" id="itemImg_'+item.id+'" src="" alt="'+escAttr(item.name)+'" style="display:none">' : '');
 
     return '<div class="card" data-item-id="'+item.id+'">' +
       imgHtml +
@@ -553,7 +562,7 @@ function buildItems() {
         '<div class="variant-row">' +
           '<div class="vr-field"><label>Size</label>' +
             '<select class="sel-size" onchange="updateSummary()"><option value="">— None —</option>'+sizeOpts+'</select></div>' +
-          (hasColors ? '<div class="vr-field"><label>Color</label><select class="sel-color" onchange="updateSummary()"><option value="">— Any —</option>'+colorOpts+'</select></div>' : '') +
+          (hasColors ? '<div class="vr-field"><label>Color</label><select class="sel-color" onchange="updateSummary();swapItemImage(\''+item.id+'\',this.value)"><option value="">— Any —</option>'+colorOpts+'</select></div>' : '') +
           '<div class="vr-qty"><label>Qty</label>' +
             '<select class="sel-qty" onchange="updateSummary()">' +
               [1,2,3,4,5,6,7,8,9,10].map(function(n){return '<option value="'+n+'">'+n+'</option>';}).join('') +
@@ -579,7 +588,7 @@ function addVariantRow(itemId) {
   row.className = 'variant-row';
   row.innerHTML =
     '<div class="vr-field"><label>Size</label><select class="sel-size" onchange="updateSummary()"><option value="">— None —</option>'+sizeOpts+'</select></div>' +
-    (hasColors ? '<div class="vr-field"><label>Color</label><select class="sel-color" onchange="updateSummary()"><option value="">— Any —</option>'+colorOpts+'</select></div>' : '') +
+    (hasColors ? '<div class="vr-field"><label>Color</label><select class="sel-color" onchange="updateSummary();swapItemImage(\''+itemId+'\',this.value)"><option value="">— Any —</option>'+colorOpts+'</select></div>' : '') +
     '<div class="vr-qty"><label>Qty</label><select class="sel-qty" onchange="updateSummary()">'+
       [1,2,3,4,5,6,7,8,9,10].map(function(n){return '<option value="'+n+'">'+n+'</option>';}).join('')+
     '</select></div>' +
@@ -588,6 +597,27 @@ function addVariantRow(itemId) {
 }
 
 function removeRow(btn) { btn.closest('.variant-row').remove(); updateSummary(); }
+
+function swapItemImage(itemId, color) {
+  var item = CONFIG.ITEMS.find(function(i){return i.id===itemId;});
+  if (!item) return;
+  var img = document.getElementById('itemImg_'+itemId);
+  if (!img) return;
+  var imgs = item.images || {};
+  var src = '';
+  if (color && imgs[color]) {
+    src = imgs[color];
+  } else if (item.image) {
+    src = item.image;
+  } else {
+    var colors = item.colors || [];
+    for (var i = 0; i < colors.length; i++) {
+      if (imgs[colors[i]]) { src = imgs[colors[i]]; break; }
+    }
+  }
+  if (src) { img.src = src; img.style.display = ''; }
+  else { img.style.display = 'none'; }
+}
 
 function getOrderItems() {
   var items = [];
@@ -839,19 +869,40 @@ function adminRenderItems() {
       return '<span class="chip">'+escHtml(c)+'<button onclick="adminRemoveChip('+idx+',\'colors\',\''+escAttr(c).replace(/'/g,"\\'")+'\')">✕</button></span>';
     }).join('');
 
-    var imgPreview = item.image
-      ? '<img class="admin-img-preview" src="'+escAttr(item.image)+'" alt="Preview">'
-      : '<div class="admin-img-preview" style="display:flex;align-items:center;justify-content:center;font-size:0.7rem;color:var(--fg-muted)">No image</div>';
+    var imgs = item.images || {};
+    var imgSectionHtml = '';
 
-    return '<div class="admin-item-card">' +
-      '<div class="admin-img-section">' +
-        imgPreview +
+    if (item.colors && item.colors.length) {
+      imgSectionHtml = item.colors.map(function(c) {
+        var cImg = imgs[c] || '';
+        var preview = cImg
+          ? '<img class="admin-img-preview" src="'+escAttr(cImg)+'" alt="'+escAttr(c)+'">'
+          : '<div class="admin-img-preview" style="display:flex;align-items:center;justify-content:center;font-size:0.65rem;color:var(--fg-muted);text-align:center">No photo</div>';
+        return '<div class="admin-img-section">' +
+          preview +
+          '<div class="admin-img-controls">' +
+            '<label>'+escHtml(c)+' Photo</label>' +
+            '<input type="file" accept="image/*" onchange="adminUploadColorImage('+idx+',\''+escAttr(c).replace(/'/g,"\\'")+'\',this)">' +
+            (cImg ? '<button class="btn btn-danger btn-sm" style="margin-top:0.25rem" onclick="adminRemoveColorImage('+idx+',\''+escAttr(c).replace(/'/g,"\\'")+'\')">Remove</button>' : '') +
+          '</div>' +
+        '</div>';
+      }).join('');
+    } else {
+      var defPreview = item.image
+        ? '<img class="admin-img-preview" src="'+escAttr(item.image)+'" alt="Preview">'
+        : '<div class="admin-img-preview" style="display:flex;align-items:center;justify-content:center;font-size:0.65rem;color:var(--fg-muted);text-align:center">No photo</div>';
+      imgSectionHtml = '<div class="admin-img-section">' +
+        defPreview +
         '<div class="admin-img-controls">' +
           '<label>Product Image</label>' +
           '<input type="file" accept="image/*" onchange="adminUploadImage('+idx+',this)">' +
           (item.image ? '<button class="btn btn-danger btn-sm" style="margin-top:0.25rem" onclick="adminRemoveImage('+idx+')">Remove</button>' : '') +
         '</div>' +
-      '</div>' +
+      '</div>';
+    }
+
+    return '<div class="admin-item-card">' +
+      imgSectionHtml +
       '<div class="admin-item-row">' +
         '<div><label>Item Name</label><input type="text" value="'+escAttr(item.name)+'" onchange="adminUpdateField('+idx+',\'name\',this.value)"></div>' +
         '<div><label>Price ($)</label><input type="number" min="0" step="0.01" value="'+item.price+'" onchange="adminUpdateField('+idx+',\'price\',parseFloat(this.value)||0)"></div>' +
@@ -902,9 +953,7 @@ function adminAddChip(idx, field) {
   adminShowMsg('adminItemMsg','success','"'+val+'" added.');
 }
 
-function adminUploadImage(idx, input) {
-  var file = input.files && input.files[0];
-  if (!file) return;
+function processImageFile(file, callback) {
   if (file.size > 5 * 1024 * 1024) {
     adminShowMsg('adminItemMsg','error','Image too large (max 5 MB).');
     return;
@@ -922,20 +971,44 @@ function adminUploadImage(idx, input) {
       var canvas = document.createElement('canvas');
       canvas.width = w; canvas.height = h;
       canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-      var dataUrl = canvas.toDataURL('image/jpeg', 1.0);
-      CONFIG.ITEMS[idx].image = dataUrl;
-      saveCustomItems(); adminRenderItems();
-      adminShowMsg('adminItemMsg','success','Image uploaded!');
+      callback(canvas.toDataURL('image/jpeg', 1.0));
     };
     img.src = e.target.result;
   };
   reader.readAsDataURL(file);
 }
 
+function adminUploadImage(idx, input) {
+  var file = input.files && input.files[0];
+  if (!file) return;
+  processImageFile(file, function(dataUrl) {
+    CONFIG.ITEMS[idx].image = dataUrl;
+    saveCustomItems(); adminRenderItems();
+    adminShowMsg('adminItemMsg','success','Image uploaded!');
+  });
+}
+
 function adminRemoveImage(idx) {
   CONFIG.ITEMS[idx].image = '';
   saveCustomItems(); adminRenderItems();
   adminShowMsg('adminItemMsg','success','Image removed.');
+}
+
+function adminUploadColorImage(idx, color, input) {
+  var file = input.files && input.files[0];
+  if (!file) return;
+  processImageFile(file, function(dataUrl) {
+    if (!CONFIG.ITEMS[idx].images) CONFIG.ITEMS[idx].images = {};
+    CONFIG.ITEMS[idx].images[color] = dataUrl;
+    saveCustomItems(); adminRenderItems();
+    adminShowMsg('adminItemMsg','success',color+' image uploaded!');
+  });
+}
+
+function adminRemoveColorImage(idx, color) {
+  if (CONFIG.ITEMS[idx].images) delete CONFIG.ITEMS[idx].images[color];
+  saveCustomItems(); adminRenderItems();
+  adminShowMsg('adminItemMsg','success',color+' image removed.');
 }
 
 function adminDeleteItem(idx) {
@@ -948,7 +1021,7 @@ function adminDeleteItem(idx) {
 }
 
 function adminAddItem() {
-  CONFIG.ITEMS.push({ id:'item-'+Date.now(), name:'New Item', price:0, sizes:['S','M','L','XL','2XL','3XL'], colors:[], image:'' });
+  CONFIG.ITEMS.push({ id:'item-'+Date.now(), name:'New Item', price:0, sizes:['S','M','L','XL','2XL','3XL'], colors:[], image:'', images:{} });
   saveCustomItems(); adminRenderItems();
   var list = document.getElementById('adminItemList');
   var last = list.lastElementChild;
